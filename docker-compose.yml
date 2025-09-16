@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  couchdb:
+    image: couchdb:3
+    container_name: couchdb
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:stable
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/html:/var/www/html
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - backend
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt
+      - ./nginx/html:/var/www/html
+    entrypoint: /bin/sh
+    command: -c "trap exit TERM; while :; do sleep 6h & wait $${!}; certbot renew --quiet --deploy-hook '/scripts/reload-after-renew.sh'; done"
+
+volumes:
+  couchdb-data:
+  letsencrypt:
+
+networks:
+  backend:
