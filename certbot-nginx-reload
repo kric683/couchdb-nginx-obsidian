@@ -1,0 +1,6 @@
+SHELL=/bin/bash
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=
+
+# Run certbot renew twice daily and reload nginx if cert changed
+0 3,15 * * * root certbot renew --quiet --deploy-hook "/scripts/reload-after-renew.sh"
